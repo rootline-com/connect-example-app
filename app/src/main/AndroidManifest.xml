@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <!-- A third-party integrator only needs network state to show connectivity; it drives the
+       connect-app through the Rootline Connect SDK and receives state over broadcasts, so no
+       overlay, foreground-service, or PAX permissions are required. -->
+  <uses-permission android:name="android.permission.INTERNET"/>
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+
+  <application
+      android:name=".ExampleApp"
+      android:allowBackup="false"
+      android:icon="@mipmap/rootline_launcher"
+      android:roundIcon="@mipmap/rootline_launcher_round"
+      android:label="@string/example_app_name"
+      android:supportsRtl="true"
+      android:theme="@style/Theme.ConnectExample">
+
+    <activity
+        android:name=".MainActivity"
+        android:exported="true"
+        android:label="@string/example_app_name"
+        android:theme="@style/Theme.ConnectExample">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN"/>
+        <category android:name="android.intent.category.LAUNCHER"/>
+      </intent-filter>
+    </activity>
+
+  </application>
+
+  <!-- The example app explicitly targets the connect-app package when it sends the START
+       broadcast, so it must be allowed to see that package on Android 11+. (The SDK's own manifest
+       also declares this, but keeping it here is harmless and self-documenting.) -->
+  <queries>
+    <package android:name="com.rootline.connect"/>
+  </queries>
+
+</manifest>

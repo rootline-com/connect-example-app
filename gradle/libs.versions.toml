@@ -1,0 +1,27 @@
+[versions]
+agp = "8.13.2"
+kotlin = "2.4.10"
+# Connect SDK — resolved from Maven Central.
+connectSdk = "1.0.2"
+# activity-compose pinned to match the SDK's transitive androidx.activity:activity (1.12.4).
+activityCompose = "1.12.4"
+composeBom = "2026.06.01"
+junit = "4.13.2"
+
+[libraries]
+connect-sdk = { group = "com.rootline.connect", name = "connect-sdk", version.ref = "connectSdk" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+compose-foundation = { group = "androidx.compose.foundation", name = "foundation" }
+compose-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout" }
+compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+compose-runtime = { group = "androidx.compose.runtime", name = "runtime" }
+compose-ui = { group = "androidx.compose.ui", name = "ui" }
+compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+compose-ui-text = { group = "androidx.compose.ui", name = "ui-text" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
