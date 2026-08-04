@@ -94,12 +94,20 @@ fun StatusScreen(
 
 @Composable
 private fun ConnectionIndicator(state: ConnectUiState) {
-    val color = if (state.connected) ConnectedGreen else ErrorRed
-    val label = when {
+    val color = when (state.connected) {
+        null -> MaterialTheme.colorScheme.onSurfaceVariant
+        true -> ConnectedGreen
+        false -> ErrorRed
+    }
+    val status = when {
+        state.connected == null -> "NATS state unknown"
         state.connected -> "NATS connected"
         state.connectionReason != null -> "NATS disconnected (${state.connectionReason})"
         else -> "NATS disconnected"
     }
+    // A restored value is the last one broadcast, not one confirmed this run — say so rather than
+    // dressing stale status as live. Cleared as soon as a broadcast arrives.
+    val label = if (state.connectionStale) "$status · last known" else status
     Row(verticalAlignment = Alignment.CenterVertically) {
         Spacer(Modifier.size(12.dp).clip(CircleShape).background(color))
         Spacer(Modifier.size(8.dp))
@@ -114,11 +122,12 @@ private fun ConnectionIndicator(state: ConnectUiState) {
 
 @Composable
 private fun RuntimeStatus(state: ConnectUiState) {
-    val label = when (state.runtimeStarted) {
+    val status = when (state.runtimeStarted) {
         null -> "Runtime: not started"
         true -> "Runtime: started"
         false -> "Runtime: failed (${state.startReason ?: "unknown"})"
     }
+    val label = if (state.runtimeStale) "$status · last known" else status
     Text(
         text = label,
         color = MaterialTheme.colorScheme.onSurfaceVariant,

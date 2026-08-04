@@ -15,11 +15,13 @@ import com.rootline.connect.sdk.RuntimeStarted
  */
 object ConnectClient {
 
+    /** A live broadcast always wins over — and un-stales — a value restored from [StatusStore]. */
     fun reduce(state: ConnectUiState, event: RuntimeStarted): ConnectUiState =
-        state.copy(runtimeStarted = event.success, startReason = event.reason)
+        state.copy(runtimeStarted = event.success, startReason = event.reason, runtimeStale = false)
 
+    /** A live broadcast always wins over — and un-stales — a value restored from [StatusStore]. */
     fun reduce(state: ConnectUiState, event: ConnectionState): ConnectUiState =
-        state.copy(connected = event.connected, connectionReason = event.reason)
+        state.copy(connected = event.connected, connectionReason = event.reason, connectionStale = false)
 
     fun reduce(state: ConnectUiState, event: PaymentState): ConnectUiState {
         val line = PaymentLine(
@@ -60,10 +62,21 @@ private fun PrintOutcome.label(): String = when (this) {
 }
 
 data class ConnectUiState(
-    val connected: Boolean = false,
+    /**
+     * Last known NATS reachability, or null when we have never seen a connection broadcast — the
+     * distinction a plain `false` default loses, since status is ok-to-miss and nothing replays it.
+     */
+    val connected: Boolean? = null,
     val connectionReason: String? = null,
+    /**
+     * True while [connected] comes from [StatusStore] rather than a broadcast received this run: the
+     * last seen value, not a confirmed one. Cleared by the first live broadcast.
+     */
+    val connectionStale: Boolean = false,
     val runtimeStarted: Boolean? = null,
     val startReason: String? = null,
+    /** [connectionStale]'s counterpart for [runtimeStarted]: restored, not confirmed this run. */
+    val runtimeStale: Boolean = false,
     val payments: List<PaymentLine> = emptyList(),
     /** Last print outcome reported via onPrintResult, for the print buttons' feedback. */
     val lastPrint: String? = null,

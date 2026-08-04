@@ -25,16 +25,34 @@ class MainActivity : ComponentActivity() {
 
     private var uiState by mutableStateOf(ConnectUiState())
 
+    // Lazy: field initializers run before attachBaseContext, where getSharedPreferences has no
+    // base context yet. First touch is in onCreate.
+    private val statusStore by lazy { StatusStore(this) }
+
     // RootlineConnect ties its reply receiver + outbox observer to this Activity's lifecycle, so
     // there is nothing to register or unregister by hand.
+    //
+    // Both status handlers write through to StatusStore: status is ok-to-miss and never replayed,
+    // so without keeping the last value a relaunch renders the "unknown"/"not started" defaults
+    // until connect-app happens to broadcast again. Outcomes need none of this — the SDK's durable
+    // outbox replays them on every start.
     private val connect = RootlineConnect(this)
-        .onRuntimeStarted { uiState = ConnectClient.reduce(uiState, it) }
-        .onConnectionState { uiState = ConnectClient.reduce(uiState, it) }
+        .onRuntimeStarted {
+            statusStore.save(it)
+            uiState = ConnectClient.reduce(uiState, it)
+        }
+        .onConnectionState {
+            statusStore.save(it)
+            uiState = ConnectClient.reduce(uiState, it)
+        }
         .onPaymentState { uiState = ConnectClient.reduce(uiState, it) }
         .onPrintResult { uiState = ConnectClient.reduce(uiState, it) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Before the first broadcast can land, so a live one overwrites the restored values.
+        uiState = statusStore.restore(uiState)
 
         setContent {
             ExampleTheme {

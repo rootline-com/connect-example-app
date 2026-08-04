@@ -40,7 +40,7 @@ class ConnectClientTest {
     @Test
     fun connectionStateConnected() {
         val state = ConnectClient.reduce(ConnectUiState(), ConnectionState(connected = true, reason = null))
-        assertTrue(state.connected)
+        assertTrue(state.connected!!)
         assertNull(state.connectionReason)
     }
 
@@ -50,8 +50,33 @@ class ConnectClientTest {
             ConnectUiState(connected = true),
             ConnectionState(connected = false, reason = "IOException"),
         )
-        assertFalse(state.connected)
+        assertFalse(state.connected!!)
         assertEquals("IOException", state.connectionReason)
+    }
+
+    @Test
+    fun connectionIsUnknownUntilTheFirstBroadcast() {
+        // Distinct from disconnected: status is ok-to-miss, so "never seen" must not read as down.
+        assertNull(ConnectUiState().connected)
+    }
+
+    @Test
+    fun aLiveBroadcastClearsTheRestoredStaleFlag() {
+        // StatusStore seeds the last seen values on relaunch; the first real broadcast confirms them.
+        val restored = ConnectUiState(
+            connected = true,
+            connectionStale = true,
+            runtimeStarted = true,
+            runtimeStale = true,
+        )
+        val connection = ConnectClient.reduce(restored, ConnectionState(connected = true, reason = null))
+        assertFalse(connection.connectionStale)
+        // Independent broadcasts: confirming one status leaves the other's flag alone.
+        assertTrue(connection.runtimeStale)
+
+        val runtime = ConnectClient.reduce(restored, RuntimeStarted(success = true, reason = null))
+        assertFalse(runtime.runtimeStale)
+        assertTrue(runtime.connectionStale)
     }
 
     @Test
