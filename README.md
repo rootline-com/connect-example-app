@@ -180,11 +180,29 @@ controls the emulator with the same `am broadcast` commands. On any emulator (AP
 These tests do not call the Payment API, so they need no `local.properties` values. The
 `.github/workflows/android-tests.yml` workflow runs them on each push and pull request.
 
-### A ready-to-use emulator image
+`connectedDebugAndroidTest` runs on every connected device. Set `ANDROID_SERIAL` to choose one.
+
+### A local emulator, without Docker (macOS and Linux)
+
+`scripts/start-emulator.sh` creates and boots an API 34 emulator for this machine, and installs the
+connect-app emulator. It picks the arm64-v8a system image on Apple Silicon and x86_64 on Intel and
+Linux. The emulator uses the macOS hypervisor on a Mac and KVM on Linux. It uses the Android SDK
+of Android Studio, and installs the command-line tools, the emulator and the system image into it
+when they are missing.
+
+```bash
+scripts/start-emulator.sh               # or --headless, --api 35, --variant google_apis, --apk <path>
+ANDROID_SERIAL=emulator-5584 ./gradlew :app:connectedDebugAndroidTest
+scripts/start-emulator.sh --stop
+```
+
+### A ready-to-use emulator image (Linux only)
 
 `scripts/build-emulator-image.sh` builds a Docker image with a headless API 34 emulator and the
 connect-app emulator installed. It is the setup Rootline runs its own emulator tests on, including
-the pinned `maestro-runner` for UI flows. It needs Linux with KVM and Docker.
+the pinned `maestro-runner` for UI flows. It needs Linux with KVM and Docker. It does not work on
+macOS: Docker Desktop runs containers in a Linux VM that has no KVM. On a Mac, use
+`scripts/start-emulator.sh`.
 
 ```bash
 scripts/build-emulator-image.sh                    # or --api 35, --variant google_apis, --apk <path>
