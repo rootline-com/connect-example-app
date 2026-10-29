@@ -71,7 +71,7 @@ Add Maven Central and the single dependency (already wired up here):
 
 // app/build.gradle.kts
 dependencies {
-    implementation("com.rootline.connect:connect-sdk:1.0.2")
+    implementation("com.rootline.connect:connect-sdk:1.0.3")
 }
 ```
 
@@ -94,9 +94,11 @@ connect.printReceipt(paymentId, ReceiptRecipient.CUSTOMER)
 ## Build & run
 
 ```bash
-./gradlew :app:testDebugUnitTest   # run the pure-JVM reducer tests
-./gradlew :app:assembleDebug       # build app/build/outputs/apk/debug/app-debug.apk
-./gradlew :app:installDebug        # install onto a connected device/emulator
+./gradlew :app:testDebugUnitTest                  # run the pure-JVM reducer tests
+./gradlew :app:assembleDebug                      # build app/build/outputs/apk/debug/app-debug.apk
+./gradlew :app:installDebug                       # install onto a connected device/emulator
+./gradlew :connect-app-emulator:installDebug      # install the connect-app emulator (emulators only)
+./gradlew :app:connectedDebugAndroidTest          # run the instrumented tests against it
 ```
 
 Requirements: an Android SDK (set `sdk.dir` in `local.properties` or `ANDROID_HOME`) and **JDK 17–21**.
@@ -128,6 +130,80 @@ that has not happened within 10 seconds (`Not foreground; awaiting integrator-dr
 An app that is backgrounded — or cold-starting — can lose that race, so a payment started while your
 activity is not resumed may time out. Keep the integrator activity in the foreground when starting a
 payment.
+
+## Testing without a terminal: the connect-app emulator
+
+`connect-app-emulator/` builds a second APK: a stand-in for the Rootline Connect app that runs on a
+standard Android emulator. It answers the SDK like the real connect-app does, but has no card
+reader, no printer and no backend. Use it to develop and test your integration before you have a
+terminal.
+
+> **Install it only on an emulator.** It uses the real package name, `com.rootline.connect`, because
+> the SDK addresses the connect-app by package name. It therefore cannot be installed next to the
+> real connect-app, and a terminal with the real connect-app rejects it.
+
+What it does:
+
+- `start()`: reports the runtime as started and the connection as connected.
+- **Simulated incoming payment**: does what the backend does on a terminal. It writes the present
+  trigger, the SDK opens the simulated card screen, and the outcome arrives on `onPaymentState`.
+  The payment fails if your app does not present it within 10 seconds, as on a terminal.
+- `requestPayment(...)`: opens a payment at once. The amount and currency must be set, otherwise the
+  outcome is `failed`.
+- `printReceipt(...)`: nothing prints. The result is the next value from the print-result queue, or
+  `OK`. A payment that did not succeed gets `NOT_FOUND`.
+
+Choose outcomes in the emulator's own screen (the "Connect Emulator" launcher icon), or with adb:
+
+```bash
+E="adb shell am broadcast -p com.rootline.connect -a com.rootline.connect.emulator.action"
+$E.SIMULATE_PAYMENT --es outcome succeeded --el amount_minor 1299 --es currency EUR  # or failed, cancelled, manual
+$E.SET_NEXT_OUTCOME --es outcome manual          # outcome for requestPayment and the screen button
+$E.SET_PRINT_RESULTS --es results OK,OUT_OF_PAPER  # results of the next prints, in order
+$E.SET_CONNECTED --ez connected false            # send a "disconnected" connection state
+$E.RESET                                         # clear payments, outbox, settings and integrator
+```
+
+With `outcome manual`, the card screen waits for a tap on Approve, Decline or Cancel.
+
+### Instrumented tests
+
+`app/src/androidTest/.../ConnectEmulatorTest.kt` drives the example app against the emulator: start,
+a succeeded, failed and cancelled payment, a printer that is out of paper, and a disconnect. It
+controls the emulator with the same `am broadcast` commands. On any emulator (API 26 or later):
+
+```bash
+./gradlew :connect-app-emulator:installDebug
+./gradlew :app:connectedDebugAndroidTest
+```
+
+These tests do not call the Payment API, so they need no `local.properties` values. The
+`.github/workflows/android-tests.yml` workflow runs them on each push and pull request.
+
+### A ready-to-use emulator image
+
+`scripts/build-emulator-image.sh` builds a Docker image with a headless API 34 emulator and the
+connect-app emulator installed. It is the setup Rootline runs its own emulator tests on, including
+the pinned `maestro-runner` for UI flows. It needs Linux with KVM and Docker.
+
+```bash
+scripts/build-emulator-image.sh                    # or --api 35, --variant google_apis, --apk <path>
+docker run -d --name connect-emulator --device /dev/kvm --shm-size=2g -p 15555:5556 \
+    connect-app-emulator:api-34-aosp_atd-x86_64
+# wait until `docker ps` shows the container as healthy (about a minute)
+adb connect localhost:15555
+./gradlew :app:connectedDebugAndroidTest
+```
+
+### What the emulator does not cover
+
+The emulator checks how your app uses the SDK. It does not check:
+
+- real cards, card schemes, declines from a bank, or receipts on paper;
+- the Payment API (`POST /v1/payments`) and the routing of a payment to a terminal;
+- the provisioning per terminal: the integrator allowlist and the payment template.
+
+Test those on a sandbox terminal before you go live.
 
 ## Docs
 

@@ -23,3 +23,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "connect-example-app"
 include(":app")
+include(":connect-app-emulator")

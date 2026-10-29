@@ -31,6 +31,7 @@ android {
         versionCode = 3
         versionName = "0.0.3"
         multiDexEnabled = true
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "PAYMENT_API_KEY", "\"${localProperty("paymentApiKey")}\"")
         buildConfigField(
@@ -89,4 +90,11 @@ dependencies {
 
     // Pure-JVM reducer tests (ConnectClientTest) — the reducer is Android-free, so no Robolectric.
     testImplementation(libs.junit)
+
+    // Instrumented tests (ConnectEmulatorTest) — run on an emulator with :connect-app-emulator installed.
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(platform(libs.compose.bom))
+    androidTestImplementation(libs.compose.ui.test.junit4)
+    debugImplementation(libs.compose.ui.test.manifest)
 }

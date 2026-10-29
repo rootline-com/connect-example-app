@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The exported surface of the real connect-app, and nothing else: the SDK can only see these
+     components, so they are what an integrator's app is tested against. Component names and
+     intent filters match the real connect-app manifest. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <!-- Launching the integrator's app back from a background receiver needs visibility of it on
+       Android 11+. Interaction already grants it after start(); this covers a fresh process. -->
+  <queries>
+    <intent>
+      <action android:name="android.intent.action.MAIN"/>
+      <category android:name="android.intent.category.LAUNCHER"/>
+    </intent>
+  </queries>
+
+  <application
+      android:allowBackup="false"
+      android:icon="@android:drawable/sym_def_app_icon"
+      android:label="@string/emulator_app_name"
+      android:supportsRtl="true"
+      android:theme="@style/Theme.ConnectEmulator">
+
+    <!-- The control panel: choose outcomes, simulate an incoming payment, read the event log. -->
+    <activity
+        android:name=".MainActivity"
+        android:exported="true">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN"/>
+        <category android:name="android.intent.category.LAUNCHER"/>
+      </intent-filter>
+    </activity>
+
+    <activity
+        android:name=".ConnectStartActivity"
+        android:exported="true"
+        android:excludeFromRecents="true"
+        android:noHistory="true"
+        android:theme="@style/Theme.ConnectEmulator.Transparent">
+      <intent-filter>
+        <action android:name="com.rootline.connect.action.START"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+      </intent-filter>
+    </activity>
+
+    <!-- Opaque, unlike the real presenter: there is no card reader app to cover it, so this screen
+         is the simulated card prompt itself. -->
+    <activity
+        android:name=".PaymentPresenterActivity"
+        android:exported="true"
+        android:excludeFromRecents="true"
+        android:launchMode="singleTop">
+      <intent-filter>
+        <action android:name="com.rootline.connect.action.PRESENT_PAYMENT"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+      </intent-filter>
+    </activity>
+
+    <receiver android:name=".PaymentRequestReceiver" android:exported="true">
+      <intent-filter>
+        <action android:name="com.rootline.connect.action.REQUEST_PAYMENT"/>
+      </intent-filter>
+    </receiver>
+
+    <receiver android:name=".PrintRequestReceiver" android:exported="true">
+      <intent-filter>
+        <action android:name="com.rootline.connect.action.PRINT_RECEIPT"/>
+      </intent-filter>
+    </receiver>
+
+    <!-- Test controls. DUMP is held by the adb shell, and so by instrumentation tests through
+         UiAutomation.executeShellCommand, but by no ordinary app. -->
+    <receiver
+        android:name=".ControlReceiver"
+        android:exported="true"
+        android:permission="android.permission.DUMP">
+      <intent-filter>
+        <action android:name="com.rootline.connect.emulator.action.SIMULATE_PAYMENT"/>
+        <action android:name="com.rootline.connect.emulator.action.SET_NEXT_OUTCOME"/>
+        <action android:name="com.rootline.connect.emulator.action.SET_PRINT_RESULTS"/>
+        <action android:name="com.rootline.connect.emulator.action.SET_CONNECTED"/>
+        <action android:name="com.rootline.connect.emulator.action.RESET"/>
+      </intent-filter>
+    </receiver>
+
+    <!-- Resolves to com.rootline.connect.outbox, the authority the SDK reads outcomes from. -->
+    <provider
+        android:name=".OutboxProvider"
+        android:authorities="${applicationId}.outbox"
+        android:exported="true"/>
+
+  </application>
+
+</manifest>

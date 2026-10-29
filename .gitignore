@@ -8,3 +8,6 @@ build/
 .externalNativeBuild
 .cxx
 local.properties
+
+# scripts/build-emulator-image.sh: downloaded SDK and Docker build context
+.android-emulator-build/

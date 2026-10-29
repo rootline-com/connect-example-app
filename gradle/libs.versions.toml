@@ -2,11 +2,15 @@
 agp = "8.13.2"
 kotlin = "2.4.10"
 # Connect SDK — resolved from Maven Central.
-connectSdk = "1.0.2"
+connectSdk = "1.0.3"
 # activity-compose pinned to match the SDK's transitive androidx.activity:activity (1.12.4).
 activityCompose = "1.12.4"
 composeBom = "2026.06.01"
 junit = "4.13.2"
+# Matches the wire-runtime the SDK depends on at runtime; the emulator compiles against its Message type.
+wire = "7.0.3"
+androidxTestRunner = "1.7.0"
+androidxTestExtJunit = "1.3.0"
 
 [libraries]
 connect-sdk = { group = "com.rootline.connect", name = "connect-sdk", version.ref = "connectSdk" }
@@ -20,6 +24,11 @@ compose-ui = { group = "androidx.compose.ui", name = "ui" }
 compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
 compose-ui-text = { group = "androidx.compose.ui", name = "ui-text" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
+wire-runtime = { group = "com.squareup.wire", name = "wire-runtime-jvm", version.ref = "wire" }
+androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "androidxTestRunner" }
+androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxTestExtJunit" }
+compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
