@@ -8,6 +8,15 @@ It is the Gradle-buildable twin of the internal Bazel reference app: the same UI
 consuming the SDK as a normal Maven dependency so you can clone, open in Android Studio, and build it
 without the Rootline monorepo.
 
+The repository has two Gradle modules:
+
+| Module | What it is |
+| --- | --- |
+| `app/` | The example integrator app, plus its unit and instrumented tests |
+| `connect-app-emulator/` | A stand-in for the Rootline Connect app, to run the example on a standard Android emulator without a terminal — see [Testing without a terminal](#testing-without-a-terminal-the-connect-app-emulator) |
+
+`scripts/` holds helpers that start an Android emulator with the connect-app emulator installed.
+
 ## What it does
 
 - **Start connect** — boots the Connect runtime via `RootlineConnect.start()`.
@@ -111,7 +120,8 @@ The bundled Gradle 8.14.3 cannot parse newer JDK version strings and fails with
 For live connectivity and payments, the **Rootline Connect app (`com.rootline.connect`) must be
 installed** on the device/terminal — this example drives it over the SDK. Without it, the app still
 builds and launches, but the connection stays disconnected and no payments arrive (the SDK degrades
-gracefully).
+gracefully). Without a terminal, use the [connect-app emulator](#testing-without-a-terminal-the-connect-app-emulator)
+on an Android emulator instead.
 
 Several things are provisioned server-side per terminal, and each one fails quietly if it is missing.
 If the app runs but nothing happens, check the connect-app's logcat for:
